@@ -333,6 +333,18 @@ static inline void kgsl_free_global(struct kgsl_device *device,
 	kgsl_sharedmem_free(memdesc);
 }
 
+/*
+ * kgsl_memdesc_is_dmabuf - Return true if the object is an
+ * imported dma-buf
+ * @memdesc: A handle to GPU memory descriptor
+ *
+ * Return: True if the memdesc is an imported dma-buf
+ */
+static inline bool kgsl_memdesc_is_dmabuf(const struct kgsl_memdesc *memdesc)
+{
+	return memdesc->flags & KGSL_MEMFLAGS_USERMEM_ION;
+}
+
 void kgsl_sharedmem_set_noretry(bool val);
 bool kgsl_sharedmem_get_noretry(void);
 

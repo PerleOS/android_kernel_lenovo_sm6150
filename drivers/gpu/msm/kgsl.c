@@ -88,6 +88,7 @@ struct dmabuf_list_entry {
 };
 
 struct kgsl_dma_buf_meta {
+	struct kgsl_device *device;
 	struct kgsl_mem_entry *entry;
 	struct dma_buf_attachment *attach;
 	struct dma_buf *dmabuf;
@@ -319,6 +320,8 @@ static void add_dmabuf_list(struct kgsl_dma_buf_meta *meta)
 		list_add(&dle->node, &kgsl_dmabuf_list);
 		meta->dle = dle;
 		list_add(&meta->node, &dle->dmabuf_list);
+		kgsl_trace_gpu_mem_total(meta->device,
+				 meta->entry->memdesc.size);
 	}
 	spin_unlock(&kgsl_dmabuf_lock);
 }
@@ -335,6 +338,8 @@ static void remove_dmabuf_list(struct kgsl_dma_buf_meta *meta)
 	if (list_empty(&dle->dmabuf_list)) {
 		list_del(&dle->node);
 		kfree(dle);
+		kgsl_trace_gpu_mem_total(meta->device,
+				-(meta->entry->memdesc.size));
 	}
 	spin_unlock(&kgsl_dmabuf_lock);
 }
@@ -2828,6 +2833,7 @@ static int kgsl_setup_dma_buf(struct kgsl_device *device,
 
 	meta->dmabuf = dmabuf;
 	meta->attach = attach;
+	meta->device = device;
 	meta->entry = entry;
 
 	entry->priv_data = meta;
