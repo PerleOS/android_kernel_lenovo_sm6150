@@ -70,7 +70,10 @@ struct bpf_map {
 	atomic_t refcnt;
 	atomic_t usercnt;
 	struct work_struct work;
+#ifndef __GENKSYMS__
+	/* Last and hidden from genksyms, as in struct bpf_prog_aux. */
 	u8 name[BPF_OBJ_NAME_LEN];
+#endif
 };
 
 /* function argument constraints */
@@ -201,8 +204,6 @@ struct bpf_prog_aux {
 	struct bpf_map **used_maps;
 	struct bpf_prog *prog;
 	struct user_struct *user;
-	u64 load_time; /* ns since boottime */
-	u8 name[BPF_OBJ_NAME_LEN];
 #ifdef CONFIG_SECURITY
 	void *security;
 #endif
@@ -210,6 +211,13 @@ struct bpf_prog_aux {
 		struct work_struct work;
 		struct rcu_head	rcu;
 	};
+#ifndef __GENKSYMS__
+	/* Last and hidden from genksyms: modules built for the stock kernel
+	 * keep their symbol CRCs and field offsets.
+	 */
+	u64 load_time; /* ns since boottime */
+	u8 name[BPF_OBJ_NAME_LEN];
+#endif
 };
 
 struct bpf_array {
