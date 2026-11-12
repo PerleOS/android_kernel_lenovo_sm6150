@@ -178,9 +178,8 @@ endif
 
 KBUILD_DTBS	:= dtbs
 
-ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+# Always keep the symbols: the bootloader applies the stock dtbo overlays to these DTBs.
 export DTC_FLAGS := -@
-endif
 
 all:	$(KBUILD_DTBS) $(KBUILD_TARGET)
 
