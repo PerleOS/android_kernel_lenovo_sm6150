@@ -404,9 +404,7 @@
 					  "msg-rx-discarded",
 					  "fr-swap";
 
-			qcom,default-sink-caps = <5000 3000>, /* 5V @ 3A */
-						 <9000 3000>, /* 9V @ 3A */
-						 <12000 2250>; /* 12V @ 2.25A */
+			qcom,default-sink-caps = <5000 3000>; /* 5V @ 3A */
 		};
 
 		pm6150_qg: qpnp,qg {
@@ -504,7 +502,7 @@
 					"pm6150_gpio7", "pm6150_gpio8";
 			gpio-controller;
 			#gpio-cells = <2>;
-			qcom,gpios-disallowed = <5 6 9 10>;
+			qcom,gpios-disallowed = <5 9 10>;
 		};
 
 		pm6150_rtc: qcom,pm6150_rtc {

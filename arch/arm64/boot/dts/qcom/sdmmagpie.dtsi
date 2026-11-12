@@ -490,6 +490,12 @@
 		#size-cells = <2>;
 		ranges;
 
+		pstore_reserve_mem: pstore_reserve_mem_region@fff00000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0 0xfff00000 0 0x100000>;
+		};
+
 		hyp_region: hyp_region@85700000 {
 			compatible = "removed-dma-pool";
 			no-map;

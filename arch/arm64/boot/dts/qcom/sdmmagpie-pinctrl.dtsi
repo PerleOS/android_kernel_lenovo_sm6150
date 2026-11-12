@@ -1263,13 +1263,13 @@
 			pri_i2s_sck_sleep: pri_i2s_sck_sleep {
 				mux {
 					pins = "gpio49";
-					function = "pri_mi2s";
+					function = "gpio";
 				};
 
 				config {
 					pins = "gpio49";
 					drive-strength = <2>;   /* 2 mA */
-					input-enable;
+					output-high;
 					bias-disable;
 				};
 			};
