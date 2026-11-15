@@ -1764,7 +1764,15 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		val->intval = 0;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-		rc = smblib_get_prop_from_bms(chg,
+		/*
+		 * CHARGE_FULL comes from the external fuel gauge; take the
+		 * design capacity from the same gauge so that the two match.
+		 * The QG battery profile does not describe this battery.
+		 */
+		rc = smblib_get_prop_from_exfg(chg,
+				POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN, val);
+		if (rc < 0 || val->intval <= 0)
+			rc = smblib_get_prop_from_bms(chg,
 				POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN, val);
 		break;
 	case POWER_SUPPLY_PROP_TIME_TO_FULL_NOW:
