@@ -9464,12 +9464,13 @@ static int msm_prince_init(struct platform_device *pdev,
 }
 
 /* Mic enable and select GPIOs; a missing or busy GPIO is not fatal. */
-static void msm_ext_prepare_mic(struct msm_asoc_mach_data *pdata)
+static void msm_ext_prepare_mic(struct device *dev,
+				struct msm_asoc_mach_data *pdata)
 {
 	int ret;
 
 	if (gpio_is_valid(pdata->mic1_en_gpio)) {
-		ret = gpio_request(pdata->mic1_en_gpio, "mic1_en_gpio");
+		ret = devm_gpio_request(dev, pdata->mic1_en_gpio, "mic1_en_gpio");
 		if (ret) {
 			pr_err("%s: mic1_en_gpio request failed, ret:%d\n",
 			       __func__, ret);
@@ -9477,7 +9478,7 @@ static void msm_ext_prepare_mic(struct msm_asoc_mach_data *pdata)
 		}
 	}
 	if (gpio_is_valid(pdata->mic2_en_gpio)) {
-		ret = gpio_request(pdata->mic2_en_gpio, "mic2_en_gpio");
+		ret = devm_gpio_request(dev, pdata->mic2_en_gpio, "mic2_en_gpio");
 		if (ret) {
 			pr_err("%s: mic2_en_gpio request failed, ret:%d\n",
 			       __func__, ret);
@@ -9485,7 +9486,7 @@ static void msm_ext_prepare_mic(struct msm_asoc_mach_data *pdata)
 		}
 	}
 	if (gpio_is_valid(pdata->mic_sel_gpio)) {
-		ret = gpio_request(pdata->mic_sel_gpio, "mic_sel_gpio");
+		ret = devm_gpio_request(dev, pdata->mic_sel_gpio, "mic_sel_gpio");
 		if (ret) {
 			pr_err("%s: mic_sel_gpio request failed, ret:%d\n",
 			       __func__, ret);
@@ -9510,6 +9511,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			sizeof(struct msm_asoc_mach_data), GFP_KERNEL);
 	if (!pdata)
 		return -ENOMEM;
+	/* The mic controls exist from card registration, before the DT is read. */
+	pdata->mic1_en_gpio = -EINVAL;
+	pdata->mic2_en_gpio = -EINVAL;
+	pdata->mic_sel_gpio = -EINVAL;
 
 	ret = of_property_read_u32(pdev->dev.of_node, "cirrus,prince-max-devs",
 				   &pdata->prince_dev_num);
@@ -9602,7 +9607,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			ret);
 		ret = 0;
 	}
-	msm_ext_prepare_mic(pdata);
+	msm_ext_prepare_mic(&pdev->dev, pdata);
 
 	ret = of_property_read_string(pdev->dev.of_node,
 		"qcom,mbhc-audio-jack-type", &mbhc_audio_jack_type);
