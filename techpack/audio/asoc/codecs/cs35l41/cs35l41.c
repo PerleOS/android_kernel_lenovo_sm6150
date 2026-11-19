@@ -46,11 +46,6 @@
 #include "cs35l41.h"
 #include <include/cs35l41.h>
 
-#ifdef CONFIG_SND_SOC_SMARTPAINFO
-extern unsigned int smartpainfo_num;
-//extern char *smartpainfo_vendor;
-#endif
-
 static const char * const cs35l41_supplies[] = {
 	"VA",
 	"VP",
@@ -2949,11 +2944,6 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 		dev_err(cs35l41->dev, "Get Device ID failed\n");
 		goto err;
 	}
-
-#ifdef CONFIG_SND_SOC_SMARTPAINFO
-	smartpainfo_num = 4;
-	smartpainfo_vendor = "cs35l41";
-#endif
 
 	ret = regmap_read(cs35l41->regmap, CS35L41_REVID, &reg_revid);
 	if (ret < 0) {

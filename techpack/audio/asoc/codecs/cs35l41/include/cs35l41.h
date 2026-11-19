@@ -11,10 +11,6 @@
 #ifndef __CS35L41_H
 #define __CS35L41_H
 
-#ifdef CONFIG_SND_SOC_SMARTPAINFO
-extern char *smartpainfo_vendor;
-#endif
-
 struct classh_cfg {
 	bool classh_bst_override;
 	bool classh_algo_enable;
