@@ -7815,7 +7815,7 @@ static int cs35l41_snd_startup(struct snd_pcm_substream *substream)
 			dev_err(rtd->card->dev,
 				"%s: Failed to set fmt codec dai: %d\n",
 				__func__, ret);
-			return ret;
+			goto err;
 		}
 		ret = snd_soc_codec_set_sysclk(dai->codec, 0, 0,
 					       CS35L41_SYSCLK_RATE,
@@ -7824,18 +7824,23 @@ static int cs35l41_snd_startup(struct snd_pcm_substream *substream)
 			dev_err(rtd->card->dev,
 				"%s: Failed to set codec sysclk: %d\n",
 				__func__, ret);
-			return ret;
+			goto err;
 		}
 		ret = snd_soc_dai_set_sysclk(dai, 0, CS35L41_SYSCLK_RATE, 0);
 		if (ret < 0) {
 			dev_err(rtd->card->dev,
 				"%s: Failed to set dai sysclk: %d\n",
 				__func__, ret);
-			return ret;
+			goto err;
 		}
 	}
 
 	return 0;
+
+err:
+	if (atomic_dec_return(&cs35l41_mclk_rsc_ref) == 0)
+		msm_mi2s_snd_shutdown(substream);
+	return ret;
 }
 
 static void cs35l41_snd_shutdown(struct snd_pcm_substream *substream)
@@ -9440,7 +9445,7 @@ static int msm_prince_init(struct platform_device *pdev,
 			dev_err(&pdev->dev,
 				"%s: prince codec dev node is not present\n",
 				__func__);
-			return -EINVAL;
+			goto err;
 		}
 		ret = of_property_read_string_index(pdev->dev.of_node,
 						    "cirrus,prince-dev-prefix",
@@ -9449,7 +9454,8 @@ static int msm_prince_init(struct platform_device *pdev,
 			dev_err(&pdev->dev,
 				"%s: failed to read prince dev prefix, ret = %d\n",
 				__func__, ret);
-			return -EINVAL;
+			of_node_put(np);
+			goto err;
 		}
 		dev_info(&pdev->dev, "%s: prince_dev prefix[%d] = %s\n",
 			 __func__, i, prefix);
@@ -9461,6 +9467,11 @@ static int msm_prince_init(struct platform_device *pdev,
 	card->num_configs += n;
 
 	return 0;
+
+err:
+	while (i--)
+		of_node_put(conf[card->num_configs + i].of_node);
+	return -EINVAL;
 }
 
 /* Mic enable and select GPIOs; a missing or busy GPIO is not fatal. */
