@@ -1,8 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-only
 # Cirrus Logic CS35L41 amplifier driver and its HALO DSP support, built as
 # the two modules of the vendor image: cirrus_wm_adsp.ko and
 # cirrus_cs35l41.ko.
 
 ccflags-y += -I$(srctree)/$(src)
+
+# wm_adsp.c here exports the same symbols as sound/soc/codecs/wm_adsp.c.
+ifneq ($(CONFIG_SND_SOC_CIRRUS_CS35L41),)
+ifneq ($(CONFIG_SND_SOC_WM_ADSP),)
+$(error CONFIG_SND_SOC_WM_ADSP conflicts with CONFIG_SND_SOC_CIRRUS_CS35L41)
+endif
+endif
 
 obj-$(CONFIG_SND_SOC_CIRRUS_CS35L41) += cirrus_wm_adsp.o
 cirrus_wm_adsp-y := wm_adsp.o
