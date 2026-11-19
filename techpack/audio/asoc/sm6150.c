@@ -3516,7 +3516,7 @@ static int msm_mic_en_put(struct snd_kcontrol *kcontrol,
 	int mic1, mic2;
 
 	msm_micen_control = ucontrol->value.integer.value[0];
-	dev_dbg(codec->dev, "%s: msm_micen_control = %d\n", __func__,
+	dev_info(codec->dev, "%s: msm_micen_control = %d\n", __func__,
 		msm_micen_control);
 	if (!pdata || !gpio_is_valid(pdata->mic1_en_gpio)) {
 		dev_err(codec->dev, "%s: mic1_en_gpio is invalid\n", __func__);
@@ -7849,7 +7849,7 @@ static int cs35l41_mi2s_snd_init(struct snd_soc_pcm_runtime *rtd)
 	char name[32];
 	int i, j;
 
-	dev_dbg(rtd->card->dev, "%s: set cs35l41_mclk_rsc_ref to 0\n",
+	dev_info(rtd->card->dev, "%s: set cs35l41_mclk_rsc_ref to 0\n",
 		__func__);
 	atomic_set(&cs35l41_mclk_rsc_ref, 0);
 
@@ -7860,7 +7860,7 @@ static int cs35l41_mi2s_snd_init(struct snd_soc_pcm_runtime *rtd)
 		const char *prefix = dai->codec->component.name_prefix;
 
 		dev_info(rtd->card->dev, "%s: found codec[%s]\n", __func__,
-			 dai->name);
+			 dev_name(dai->dev));
 		if (!prefix)
 			continue;
 		for (j = 0; j < ARRAY_SIZE(widgets); j++) {
@@ -9502,7 +9502,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 				   &pdata->prince_dev_num);
 	if (ret)
 		pdata->prince_dev_num = 0;
-	dev_dbg(&pdev->dev, "%s: cirrus,prince-max-devs %d\n", __func__,
+	dev_info(&pdev->dev, "%s: cirrus,prince-max-devs %d\n", __func__,
 		pdata->prince_dev_num);
 
 	card = populate_snd_card_dailinks(&pdev->dev, pdata);
