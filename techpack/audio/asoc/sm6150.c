@@ -3609,11 +3609,11 @@ static u32 get_mi2s_bits_per_sample(u32 bit_format);
  * Primary MI2S bit clock on demand, for the DBMDX/AC108 capture path. The
  * clock is shared with the primary MI2S DAI through mi2s_intf_conf.ref_cnt.
  */
-static void msm_pri_set_clk(bool enable)
+static int msm_pri_set_clk(bool enable)
 {
 	struct mi2s_conf *conf = &mi2s_intf_conf[PRIM_MI2S];
 	u32 bits;
-	int ret;
+	int ret = 0;
 
 	mutex_lock(&conf->lock);
 	if (enable) {
@@ -3647,6 +3647,7 @@ static void msm_pri_set_clk(bool enable)
 	}
 out:
 	mutex_unlock(&conf->lock);
+	return ret < 0 ? ret : 0;
 }
 
 static int pri_i2s_clk_get(struct snd_kcontrol *kcontrol,
@@ -3659,8 +3660,20 @@ static int pri_i2s_clk_get(struct snd_kcontrol *kcontrol,
 static int pri_i2s_clk_put(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
-	msm_bclk_control = ucontrol->value.integer.value[0];
-	msm_pri_set_clk(msm_bclk_control == 1);
+	int val = !!ucontrol->value.integer.value[0];
+	int ret;
+
+	/*
+	 * The control holds one reference on the primary MI2S clock while
+	 * it is on: take or drop it only when the value changes.
+	 */
+	if (val == msm_bclk_control)
+		return 0;
+
+	ret = msm_pri_set_clk(val);
+	if (ret < 0)
+		return ret;
+	msm_bclk_control = val;
 
 	return 0;
 }
