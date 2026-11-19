@@ -77,7 +77,7 @@ static int cs35l41_i2c_probe(struct i2c_client *client,
 	cs35l41->regmap = devm_regmap_init_i2c(client, regmap_config);
 	if (IS_ERR(cs35l41->regmap)) {
 		ret = PTR_ERR(cs35l41->regmap);
-		dev_info(cs35l41->dev, "Failed to allocate register map: %d\n",
+		dev_err(cs35l41->dev, "Failed to allocate register map: %d\n",
 			ret);
 		return ret;
 	}

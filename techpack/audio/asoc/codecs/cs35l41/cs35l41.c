@@ -256,7 +256,7 @@ static int cs35l41_halo_booted_put(struct snd_kcontrol *kcontrol,
 			wm_halo_event(w, kcontrol, SND_SOC_DAPM_PRE_PMD);
 			cs35l41->halo_booted = false;
 		} else
-			dev_info(cs35l41->dev, "Can't find widget\n");
+			dev_err(cs35l41->dev, "Can't find widget\n");
 	}
 	cs35l41->halo_booted = ucontrol->value.integer.value[0];
 
@@ -434,7 +434,7 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 	dev_dbg(cs35l41->dev, "fw_name:%s\n", fw_name);
 	ret	= request_firmware(&fw, fw_name, cs35l41->dev);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Failed to request firmware:%s\n",
+		dev_err(cs35l41->dev, "Failed to request firmware:%s\n",
 			fw_name);
 		return -EIO;
 	}
@@ -449,7 +449,7 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 				val_str[j]	= fw->data[i];
 				j++;
 			} else {
-				dev_info(cs35l41->dev, "Invalid input\n");
+				dev_err(cs35l41->dev, "Invalid input\n");
 				ret		= -EINVAL;
 				goto exit;
 			}
@@ -459,7 +459,7 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 	val_str[j]	= '\0';
 	ret		= kstrtos32(val_str, 10, &data_ctl_len);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "kstrtos32 failed (%d) val_str:%s\n",
+		dev_err(cs35l41->dev, "kstrtos32 failed (%d) val_str:%s\n",
 			ret, val_str);
 		goto exit;
 	}
@@ -485,7 +485,7 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 			val_str[j]	= '\0';
 			ret		= kstrtos32(val_str, 10, &val);
 			if (ret < 0) {
-				dev_info(cs35l41->dev,
+				dev_err(cs35l41->dev,
 					"kstrtos32 failed (%d) val_str:%s\n",
 					ret, val_str);
 				goto exit;
@@ -501,7 +501,7 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 				val_str[j] = fw->data[i];
 				j++;
 			} else {
-				dev_info(cs35l41->dev, "Invalid input\n");
+				dev_err(cs35l41->dev, "Invalid input\n");
 				ret	= -EINVAL;
 				goto exit;
 			}
@@ -539,7 +539,7 @@ static int cs35l41_do_fast_switch(struct cs35l41_private *cs35l41)
 	}
 
 	if (!fw_running) {
-		dev_info(cs35l41->dev, "CSPL_STATE (%d) is not running\n",
+		dev_err(cs35l41->dev, "CSPL_STATE (%d) is not running\n",
 			st_ctl);
 		ret	= -1;
 		goto exit;
@@ -581,7 +581,7 @@ static int cs35l41_fast_switch_file_put(struct snd_kcontrol *kcontrol,
 	soc_enum = (struct soc_enum *)kcontrol->private_value;
 
 	if (i >= soc_enum->items) {
-		dev_info(codec->dev, "Invalid mixer input (%u)\n", i);
+		dev_err(codec->dev, "Invalid mixer input (%u)\n", i);
 		return -EINVAL;
 	}
 
@@ -685,11 +685,11 @@ static int cs35l41_set_csplmboxcmd(struct cs35l41_private *cs35l41,
 	regmap_write(cs35l41->regmap, CS35L41_CSPL_MBOX_CMD_DRV, cmd);
 
 	/* Poll for DSP ACK */
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 5; i++) {
 		usleep_range(1000, 1010);
 		ret = regmap_read(cs35l41->regmap, CS35L41_IRQ1_STATUS2, &sts);
 		if (ret < 0) {
-			dev_info(cs35l41->dev, "regmap_read failed (%d)\n", ret);
+			dev_err(cs35l41->dev, "regmap_read failed (%d)\n", ret);
 			continue;
 		}
 		if (sts & (1 << CS35L41_CSPL_MBOX_CMD_FW_SHIFT)) {
@@ -704,8 +704,8 @@ static int cs35l41_set_csplmboxcmd(struct cs35l41_private *cs35l41,
 	}
 
 	if (!ack) {
-		dev_info(cs35l41->dev,
-			"Timeout waiting for DSP to set mbox cmd\n");
+		dev_err(cs35l41->dev,
+			"Timout waiting for DSP to set mbox cmd\n");
 		ret = -ETIMEDOUT;
 	}
 
@@ -716,14 +716,14 @@ static int cs35l41_set_csplmboxcmd(struct cs35l41_private *cs35l41,
 
 	if (regmap_read(cs35l41->regmap,
 			CS35L41_CSPL_MBOX_STS, &sts) < 0) {
-		dev_info(cs35l41->dev, "Failed to read %u\n",
+		dev_err(cs35l41->dev, "Failed to read %u\n",
 			CS35L41_CSPL_MBOX_STS);
 		ret = -EACCES;
 	}
 
 	if (!cs35l41_is_csplmboxsts_correct(cmd,
 					    (enum cs35l41_cspl_mboxstate)sts)) {
-		dev_info(cs35l41->dev,
+		dev_err(cs35l41->dev,
 			"Failed to set mailbox(cmd: %u, sts: %u)\n", cmd, sts);
 		ret = -ENOMSG;
 	}
@@ -965,7 +965,7 @@ static int cs35l41_otp_unpack(void *data)
 
 	ret = regmap_read(cs35l41->regmap, CS35L41_OTPID, &otp_id_reg);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Read OTP ID failed\n");
+		dev_err(cs35l41->dev, "Read OTP ID failed\n");
 		ret = -EINVAL;
 		goto err_otp_unpack;
 	}
@@ -973,7 +973,7 @@ static int cs35l41_otp_unpack(void *data)
 	otp_map_match = cs35l41_find_otp_map(otp_id_reg);
 
 	if (otp_map_match == NULL) {
-		dev_info(cs35l41->dev, "OTP Map matching ID %d not found\n",
+		dev_err(cs35l41->dev, "OTP Map matching ID %d not found\n",
 				otp_id_reg);
 		ret = -EINVAL;
 		goto err_otp_unpack;
@@ -989,7 +989,7 @@ static int cs35l41_otp_unpack(void *data)
 	ret = regmap_bulk_read(cs35l41->regmap, CS35L41_OTP_MEM0, otp_mem,
 						CS35L41_OTP_SIZE_WORDS);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Read OTP Mem failed\n");
+		dev_err(cs35l41->dev, "Read OTP Mem failed\n");
 		ret = -EINVAL;
 		goto err_otp_unpack;
 	}
@@ -1006,13 +1006,13 @@ static int cs35l41_otp_unpack(void *data)
 
 	ret = regmap_write(cs35l41->regmap, CS35L41_TEST_KEY_CTL, 0x00000055);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Write Unlock key failed 1/2\n");
+		dev_err(cs35l41->dev, "Write Unlock key failed 1/2\n");
 		ret = -EINVAL;
 		goto err_otp_unpack;
 	}
 	ret = regmap_write(cs35l41->regmap, CS35L41_TEST_KEY_CTL, 0x000000AA);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Write Unlock key failed 2/2\n");
+		dev_err(cs35l41->dev, "Write Unlock key failed 2/2\n");
 		ret = -EINVAL;
 		goto err_otp_unpack;
 	}
@@ -1051,7 +1051,7 @@ static int cs35l41_otp_unpack(void *data)
 						otp_map[i].shift),
 						otp_val << otp_map[i].shift);
 			if (ret < 0) {
-				dev_info(cs35l41->dev, "Write OTP val failed\n");
+				dev_err(cs35l41->dev, "Write OTP val failed\n");
 				ret = -EINVAL;
 				goto err_otp_unpack;
 			}
@@ -1060,13 +1060,13 @@ static int cs35l41_otp_unpack(void *data)
 
 	ret = regmap_write(cs35l41->regmap, CS35L41_TEST_KEY_CTL, 0x000000CC);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Write Lock key failed 1/2\n");
+		dev_err(cs35l41->dev, "Write Lock key failed 1/2\n");
 		ret = -EINVAL;
 		goto err_otp_unpack;
 	}
 	ret = regmap_write(cs35l41->regmap, CS35L41_TEST_KEY_CTL, 0x00000033);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Write Lock key failed 2/2\n");
+		dev_err(cs35l41->dev, "Write Lock key failed 2/2\n");
 		ret = -EINVAL;
 		goto err_otp_unpack;
 	}
@@ -1105,7 +1105,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	 * speaker out of Safe-Mode.
 	 */
 	if (status[0] & CS35L41_AMP_SHORT_ERR) {
-		dev_info(cs35l41->dev, "Amp short error\n");
+		dev_crit(cs35l41->dev, "Amp short error\n");
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
 					CS35L41_AMP_SHORT_ERR);
 		regmap_write(cs35l41->regmap, CS35L41_PROTECT_REL_ERR_IGN, 0);
@@ -1117,7 +1117,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	}
 
 	if (status[0] & CS35L41_TEMP_WARN) {
-		dev_info(cs35l41->dev, "Over temperature warning\n");
+		dev_crit(cs35l41->dev, "Over temperature warning\n");
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
 					CS35L41_TEMP_WARN);
 		regmap_write(cs35l41->regmap, CS35L41_PROTECT_REL_ERR_IGN, 0);
@@ -1129,7 +1129,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	}
 
 	if (status[0] & CS35L41_TEMP_ERR) {
-		dev_info(cs35l41->dev, "Over temperature error\n");
+		dev_crit(cs35l41->dev, "Over temperature error\n");
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
 					CS35L41_TEMP_ERR);
 		regmap_write(cs35l41->regmap, CS35L41_PROTECT_REL_ERR_IGN, 0);
@@ -1141,7 +1141,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	}
 
 	if (status[0] & CS35L41_BST_OVP_ERR) {
-		dev_info(cs35l41->dev, "VBST Over Voltage error\n");
+		dev_crit(cs35l41->dev, "VBST Over Voltage error\n");
 		regmap_update_bits(cs35l41->regmap, CS35L41_PWR_CTRL2,
 					CS35L41_BST_EN_MASK, 0);
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
@@ -1159,7 +1159,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	}
 
 	if (status[0] & CS35L41_BST_DCM_UVP_ERR) {
-		dev_info(cs35l41->dev, "DCM VBST Under Voltage Error\n");
+		dev_crit(cs35l41->dev, "DCM VBST Under Voltage Error\n");
 		regmap_update_bits(cs35l41->regmap, CS35L41_PWR_CTRL2,
 					CS35L41_BST_EN_MASK, 0);
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
@@ -1177,7 +1177,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	}
 
 	if (status[0] & CS35L41_BST_SHORT_ERR) {
-		dev_info(cs35l41->dev, "LBST error: powering off!\n");
+		dev_crit(cs35l41->dev, "LBST error: powering off!\n");
 		regmap_update_bits(cs35l41->regmap, CS35L41_PWR_CTRL2,
 					CS35L41_BST_EN_MASK, 0);
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
@@ -1195,7 +1195,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 	}
 
 	if (status[0] & CS35L41_VPBR_FLAG) {
-		dev_info(cs35l41->dev, "VPBR Flag!\n");
+		dev_crit(cs35l41->dev, "VPBR Flag!\n");
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
 					CS35L41_VPBR_FLAG);
 		/* Mask VPBP Flag IRQ */
@@ -1262,7 +1262,7 @@ static int cs35l41_hibernate(struct snd_soc_dapm_widget *w,
 					msecs_to_jiffies(2000));
 		break;
 	default:
-		dev_info(codec->dev, "Invalid event = 0x%x\n", event);
+		dev_err(codec->dev, "Invalid event = 0x%x\n", event);
 		ret = -EINVAL;
 	}
 	return ret;
@@ -1317,7 +1317,7 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 				mboxcmd = CSPL_MBOX_CMD_RESUME;
 				break;
 			default:
-				dev_info(cs35l41->dev,
+				dev_err(cs35l41->dev,
 					"Firmware status is invalid(%u)\n",
 					fw_status);
 				break;
@@ -1368,7 +1368,7 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 		}
 
 		if (!pdn)
-			dev_info(cs35l41->dev, "PDN failed\n");
+			dev_warn(cs35l41->dev, "PDN failed\n");
 
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
 			     CS35L41_PDN_DONE_MASK);
@@ -1379,7 +1379,7 @@ static int cs35l41_main_amp_event(struct snd_soc_dapm_widget *w,
 		cs35l41->enabled = false;
 		break;
 	default:
-		dev_info(codec->dev, "Invalid event = 0x%x\n", event);
+		dev_err(codec->dev, "Invalid event = 0x%x\n", event);
 		ret = -EINVAL;
 	}
 	return ret;
@@ -1540,7 +1540,7 @@ static int cs35l41_set_dai_fmt(struct snd_soc_dai *codec_dai, unsigned int fmt)
 		slave_mode = 0;
 		break;
 	default:
-		dev_info(cs35l41->dev,
+		dev_warn(cs35l41->dev,
 			"%s: Mixed master mode unsupported\n", __func__);
 		return -EINVAL;
 	}
@@ -1557,7 +1557,7 @@ static int cs35l41_set_dai_fmt(struct snd_soc_dai *codec_dai, unsigned int fmt)
 		cs35l41->dspa_mode = false;
 		break;
 	default:
-		dev_info(cs35l41->dev,
+		dev_warn(cs35l41->dev,
 			"%s: Invalid or unsupported DAI format\n", __func__);
 		return -EINVAL;
 	}
@@ -1580,7 +1580,7 @@ static int cs35l41_set_dai_fmt(struct snd_soc_dai *codec_dai, unsigned int fmt)
 		sclk_fmt = 0;
 		break;
 	default:
-		dev_info(cs35l41->dev,
+		dev_warn(cs35l41->dev,
 			"%s: Invalid DAI clock INV\n", __func__);
 		return -EINVAL;
 	}
@@ -1696,14 +1696,14 @@ static int cs35l41_codec_set_sysclk(struct snd_soc_codec *codec,
 		cs35l41->clksrc = CS35L41_PLLSRC_MCLK;
 		break;
 	default:
-		dev_info(codec->dev, "Invalid CLK Config\n");
+		dev_err(codec->dev, "Invalid CLK Config\n");
 		return -EINVAL;
 	}
 
 	cs35l41->extclk_cfg = cs35l41_get_clk_config(freq);
 
 	if (cs35l41->extclk_cfg < 0) {
-		dev_info(codec->dev, "Invalid CLK Config: %d, freq: %u\n",
+		dev_err(codec->dev, "Invalid CLK Config: %d, freq: %u\n",
 			cs35l41->extclk_cfg, freq);
 		return -EINVAL;
 	}
@@ -1744,7 +1744,7 @@ static int cs35l41_dai_set_sysclk(struct snd_soc_dai *dai,
 	unsigned int val;
 
 	if (cs35l41_get_clk_config(freq) < 0) {
-		dev_info(codec->dev, "Invalid CLK Config freq: %u\n", freq);
+		dev_err(codec->dev, "Invalid CLK Config freq: %u\n", freq);
 		return -EINVAL;
 	}
 
@@ -1800,14 +1800,14 @@ static int cs35l41_pcm_hw_params(struct snd_pcm_substream *substream,
 		ret = cs35l41_codec_set_sysclk(codec, CS35L41_PLLSRC_SCLK, 0,
 			sclk_rate, 0);
 		if (ret != 0) {
-			dev_info(cs35l41->dev, "Can't set codec sysclk %d\n",
+			dev_err(cs35l41->dev, "Can't set codec sysclk %d\n",
 				ret);
 			return ret;
 		}
 		ret = cs35l41_dai_set_sysclk(dai,
 				CS35L41_PLLSRC_SCLK, sclk_rate, 0);
 		if (ret != 0) {
-			dev_info(cs35l41->dev, "Can't set dai sysclk %d\n", ret);
+			dev_err(cs35l41->dev, "Can't set dai sysclk %d\n", ret);
 			return ret;
 		}
 	}
@@ -1887,7 +1887,7 @@ static int cs35l41_boost_config(struct cs35l41_private *cs35l41,
 		bst_lbst_val = 3;
 		break;
 	default:
-		dev_info(dev, "Invalid boost inductor value: %d nH\n",
+		dev_err(dev, "Invalid boost inductor value: %d nH\n",
 				boost_ind);
 		return -EINVAL;
 	}
@@ -1914,7 +1914,7 @@ static int cs35l41_boost_config(struct cs35l41_private *cs35l41,
 			cs35l41_bst_k1_table[bst_lbst_val][bst_cbst_range]
 				<< CS35L41_BST_K1_SHIFT);
 	if (ret) {
-		dev_info(dev, "Failed to write boost K1 coefficient\n");
+		dev_err(dev, "Failed to write boost K1 coefficient\n");
 		return ret;
 	}
 
@@ -1923,7 +1923,7 @@ static int cs35l41_boost_config(struct cs35l41_private *cs35l41,
 			cs35l41_bst_k2_table[bst_lbst_val][bst_cbst_range]
 				<< CS35L41_BST_K2_SHIFT);
 	if (ret) {
-		dev_info(dev, "Failed to write boost K2 coefficient\n");
+		dev_err(dev, "Failed to write boost K2 coefficient\n");
 		return ret;
 	}
 
@@ -1932,7 +1932,7 @@ static int cs35l41_boost_config(struct cs35l41_private *cs35l41,
 			cs35l41_bst_slope_table[bst_lbst_val]
 				<< CS35L41_BST_SLOPE_SHIFT);
 	if (ret) {
-		dev_info(dev, "Failed to write boost slope coefficient\n");
+		dev_err(dev, "Failed to write boost slope coefficient\n");
 		return ret;
 	}
 
@@ -1940,12 +1940,12 @@ static int cs35l41_boost_config(struct cs35l41_private *cs35l41,
 			CS35L41_BST_LBST_VAL_MASK,
 			bst_lbst_val << CS35L41_BST_LBST_VAL_SHIFT);
 	if (ret) {
-		dev_info(dev, "Failed to write boost inductor value\n");
+		dev_err(dev, "Failed to write boost inductor value\n");
 		return ret;
 	}
 
 	if ((boost_ipk < 1600) || (boost_ipk > 4500)) {
-		dev_info(dev, "Invalid boost inductor peak current: %d mA\n",
+		dev_err(dev, "Invalid boost inductor peak current: %d mA\n",
 				boost_ipk);
 		return -EINVAL;
 	}
@@ -1955,7 +1955,7 @@ static int cs35l41_boost_config(struct cs35l41_private *cs35l41,
 			CS35L41_BST_IPK_MASK,
 			bst_ipk_scaled << CS35L41_BST_IPK_SHIFT);
 	if (ret) {
-		dev_info(dev, "Failed to write boost inductor peak current\n");
+		dev_err(dev, "Failed to write boost inductor peak current\n");
 		return ret;
 	}
 
@@ -1975,11 +1975,11 @@ static int cs35l41_set_pdata(struct cs35l41_private *cs35l41)
 					cs35l41->pdata.bst_cap,
 					cs35l41->pdata.bst_ipk);
 		if (ret) {
-			dev_info(cs35l41->dev, "Error in Boost DT config\n");
+			dev_err(cs35l41->dev, "Error in Boost DT config\n");
 			return ret;
 		}
 	} else {
-		dev_info(cs35l41->dev, "Incomplete Boost component DT config\n");
+		dev_err(cs35l41->dev, "Incomplete Boost component DT config\n");
 		return -EINVAL;
 	}
 
@@ -2124,7 +2124,7 @@ static int cs35l41_codec_probe(struct snd_soc_codec *codec)
 	kcontrol->private_value	= (unsigned long)&cs35l41->fast_switch_enum;
 	ret = snd_soc_add_codec_controls(codec, kcontrol, 1);
 	if (ret < 0)
-		dev_info(cs35l41->dev,
+		dev_err(cs35l41->dev,
 			"snd_soc_add_codec_controls failed (%d)\n", ret);
 	kfree(kcontrol);
 
@@ -2314,7 +2314,7 @@ static int cs35l41_handle_of_data(struct device *dev,
 	ret = of_property_read_u32(np, "cirrus,boost-ctl-millivolt", &val);
 	if (ret >= 0) {
 		if (val < 2550 || val > 11000) {
-			dev_info(dev,
+			dev_err(dev,
 				"Invalid Boost Voltage %u mV\n", val);
 			return -EINVAL;
 		}
@@ -2352,7 +2352,7 @@ static int cs35l41_handle_of_data(struct device *dev,
 	if (classh_config->classh_algo_enable) {
 		classh_config->classh_bst_override =
 			of_property_read_bool(sub_node,
-				"cirrus,classh-bst-override");
+				"cirrus,classh-bst-overide");
 
 		ret = of_property_read_u32(sub_node,
 					   "cirrus,classh-bst-max-limit",
@@ -2506,7 +2506,7 @@ static int cs35l41_dsp_init(struct cs35l41_private *cs35l41)
 	dsp->n_tx_channels = CS35L41_DSP_N_TX_RATES;
 	ret = wm_halo_init(dsp, &cs35l41->rate_lock);
 	if (ret < 0) {
-		dev_info(cs35l41->dev,
+		dev_err(cs35l41->dev,
 			"DSP init error %d.\n", ret);
 	}
 	cs35l41->halo_booted = false;
@@ -2614,7 +2614,7 @@ static int cs35l41_exit_hibernate(struct cs35l41_private *cs35l41)
 			ret = regmap_read(cs35l41->regmap,
 					  CS35L41_CSPL_MBOX_STS, &status);
 			if (ret < 0)
-				dev_info(cs35l41->dev,
+				dev_err(cs35l41->dev,
 					"%s: mbox status read fail\n",
 					__func__);
 
@@ -2623,7 +2623,7 @@ static int cs35l41_exit_hibernate(struct cs35l41_private *cs35l41)
 		if (timeout != 0)
 			break;
 
-		dev_info(cs35l41->dev, "hibernate wake failed\n");
+		dev_err(cs35l41->dev, "hibernate wake failed\n");
 
 		cs35l41_wait_for_pwrmgt_sts(cs35l41);
 		regmap_write(cs35l41->regmap, CS35L41_WAKESRC_CTL, 0x0088);
@@ -2668,7 +2668,7 @@ static int cs35l41_exit_hibernate(struct cs35l41_private *cs35l41)
 	} while (ret < 0 && --retries > 0);
 
 	if (retries < 0)
-		dev_info(cs35l41->dev, "Failed to exit from hibernate\n");
+		dev_err(cs35l41->dev, "Failed to exit from hibernate\n");
 	else
 		dev_dbg(cs35l41->dev, "cs35l41 restored in %d attempts\n",
 			6 - retries);
@@ -2686,20 +2686,20 @@ static int cs35l41_restore(struct cs35l41_private *cs35l41)
 
 	ret = regmap_read(cs35l41->regmap, CS35L41_DEVID, &regid);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Get Device ID fail\n");
+		dev_err(cs35l41->dev, "cs35l41_restore: Get Device ID fail\n");
 		return -ENODEV;
 	}
 
 	ret = regmap_read(cs35l41->regmap, CS35L41_REVID, &reg_revid);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Get Revision ID failed\n");
+		dev_err(cs35l41->dev, "Get Revision ID failed\n");
 		return -ENODEV;
 	}
 
 	mtl_revid = reg_revid & CS35L41_MTLREVID_MASK;
 	chipid_match = (mtl_revid % 2) ? CS35L41R_CHIP_ID : CS35L41_CHIP_ID;
 	if (regid != chipid_match) {
-		dev_info(cs35l41->dev, "CS35L41 Device ID (%X). Expected ID %X\n",
+		dev_err(cs35l41->dev, "CS35L41 Device ID (%X). Expected ID %X\n",
 			regid, chipid_match);
 		return -ENODEV;
 	}
@@ -2724,7 +2724,7 @@ static int cs35l41_restore(struct cs35l41_private *cs35l41)
 				cs35l41_reva0_errata_patch,
 				ARRAY_SIZE(cs35l41_reva0_errata_patch));
 		if (ret < 0) {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Failed to apply A0 errata patch %d\n", ret);
 		}
 		break;
@@ -2733,7 +2733,7 @@ static int cs35l41_restore(struct cs35l41_private *cs35l41)
 				cs35l41_revb0_errata_patch,
 				ARRAY_SIZE(cs35l41_revb0_errata_patch));
 		if (ret < 0) {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Failed to apply B0 errata patch %d\n", ret);
 		}
 		break;
@@ -2742,7 +2742,7 @@ static int cs35l41_restore(struct cs35l41_private *cs35l41)
 				cs35l41_revb2_errata_patch,
 				ARRAY_SIZE(cs35l41_revb2_errata_patch));
 		if (ret < 0) {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Failed to apply B2 errata patch %d\n", ret);
 		}
 		break;
@@ -2877,7 +2877,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	ret = devm_regulator_bulk_get(cs35l41->dev, cs35l41->num_supplies,
 					cs35l41->supplies);
 	if (ret != 0) {
-		dev_info(cs35l41->dev,
+		dev_err(cs35l41->dev,
 			"Failed to request core supplies: %d\n",
 			ret);
 		return ret;
@@ -2897,7 +2897,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 
 	ret = regulator_bulk_enable(cs35l41->num_supplies, cs35l41->supplies);
 	if (ret != 0) {
-		dev_info(cs35l41->dev,
+		dev_err(cs35l41->dev,
 			"Failed to enable core supplies: %d\n", ret);
 		return ret;
 	}
@@ -2912,7 +2912,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 			dev_info(cs35l41->dev,
 				 "Reset line busy, assuming shared reset\n");
 		} else {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Failed to get reset GPIO: %d\n", ret);
 			goto err;
 		}
@@ -2927,7 +2927,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 
 	do {
 		if (timeout == 0) {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Timeout waiting for OTP_BOOT_DONE\n");
 			ret = -EBUSY;
 			goto err;
@@ -2939,14 +2939,14 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 
 	regmap_read(cs35l41->regmap, CS35L41_IRQ1_STATUS3, &int_status);
 	if (int_status & CS35L41_OTP_BOOT_ERR) {
-		dev_info(cs35l41->dev, "OTP Boot error\n");
+		dev_err(cs35l41->dev, "OTP Boot error\n");
 		ret = -EINVAL;
 		goto err;
 	}
 
 	ret = regmap_read(cs35l41->regmap, CS35L41_DEVID, &regid);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Get Device ID failed\n");
+		dev_err(cs35l41->dev, "Get Device ID failed\n");
 		goto err;
 	}
 
@@ -2957,10 +2957,10 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 
 	ret = regmap_read(cs35l41->regmap, CS35L41_REVID, &reg_revid);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "Get Revision ID failed\n");
+		dev_err(cs35l41->dev, "Get Revision ID failed\n");
 		goto err;
 	}
-	dev_info(cs35l41->dev, "REVID = 0x%x\n", reg_revid);
+	dev_dbg(cs35l41->dev, "REVID = 0x%x\n", reg_revid);
 
 	mtl_revid = reg_revid & CS35L41_MTLREVID_MASK;
 
@@ -2969,7 +2969,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	 */
 	chipid_match = (mtl_revid % 2) ? CS35L41R_CHIP_ID : CS35L41_CHIP_ID;
 	if (regid != chipid_match) {
-		dev_info(cs35l41->dev, "CS35L41 Device ID (%X). Expected ID %X\n",
+		dev_err(cs35l41->dev, "CS35L41 Device ID (%X). Expected ID %X\n",
 			regid, chipid_match);
 		ret = -ENODEV;
 		goto err;
@@ -2983,7 +2983,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 
 	/* CS35L41 needs INT for PDN_DONE */
 	if (ret != 0) {
-		dev_info(cs35l41->dev, "Failed to request IRQ: %d\n", ret);
+		dev_err(cs35l41->dev, "Failed to request IRQ: %d\n", ret);
 		goto err;
 	}
 
@@ -3000,7 +3000,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 				cs35l41_reva0_errata_patch,
 				ARRAY_SIZE(cs35l41_reva0_errata_patch));
 		if (ret < 0) {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Failed to apply A0 errata patch %d\n", ret);
 			goto err;
 		}
@@ -3011,7 +3011,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 				cs35l41_revb0_errata_patch,
 				ARRAY_SIZE(cs35l41_revb0_errata_patch));
 		if (ret < 0) {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Failed to apply B0 errata patch %d\n", ret);
 			goto err;
 		}
@@ -3021,7 +3021,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 				cs35l41_revb2_errata_patch,
 				ARRAY_SIZE(cs35l41_revb2_errata_patch));
 		if (ret < 0) {
-			dev_info(cs35l41->dev,
+			dev_err(cs35l41->dev,
 				"Failed to apply B2 errata patch %d\n", ret);
 			goto err;
 		}
@@ -3044,7 +3044,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 
 	ret = cs35l41_otp_unpack(cs35l41);
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "OTP Unpack failed\n");
+		dev_err(cs35l41->dev, "OTP Unpack failed\n");
 		goto err;
 	}
 
@@ -3058,7 +3058,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	ret =  snd_soc_register_codec(cs35l41->dev, &soc_codec_dev_cs35l41,
 					cs35l41_dai, ARRAY_SIZE(cs35l41_dai));
 	if (ret < 0) {
-		dev_info(cs35l41->dev, "%s: Register codec failed\n", __func__);
+		dev_err(cs35l41->dev, "%s: Register codec failed\n", __func__);
 		goto err;
 	}
 
