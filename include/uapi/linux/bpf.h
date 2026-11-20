@@ -212,11 +212,11 @@ enum bpf_attach_type {
 /* Specify numa node during map creation */
 #define BPF_F_NUMA_NODE		(1U << 2)
 
+#define BPF_OBJ_NAME_LEN 16U
+
 /* Flags for accessing BPF object */
 #define BPF_F_RDONLY		(1U << 3)
 #define BPF_F_WRONLY		(1U << 4)
-
-#define BPF_OBJ_NAME_LEN 16U
 
 union bpf_attr {
 	struct { /* anonymous struct used by BPF_MAP_CREATE command */
