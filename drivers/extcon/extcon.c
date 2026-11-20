@@ -1335,8 +1335,12 @@ int extcon_dev_register(struct extcon_dev *edev)
 			sizeof(*edev->bnh) * edev->max_supported, GFP_KERNEL);
 	if (!edev->bnh) {
 		ret = -ENOMEM;
+		device_unregister(&edev->dev);
 		goto err_dev;
 	}
+
+	for (index = 0; index < edev->max_supported; index++)
+		BLOCKING_INIT_NOTIFIER_HEAD(&edev->bnh[index]);
 
 	mutex_lock(&extcon_dev_list_lock);
 	list_add(&edev->entry, &extcon_dev_list);
