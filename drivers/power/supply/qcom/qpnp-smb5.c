@@ -1740,6 +1740,36 @@ static enum power_supply_property smb5_batt_props[] = {
 };
 
 #define DEBUG_ACCESSORY_TEMP_DECIDEGC	250
+
+/*
+ * CHARGE_FULL comes from the external fuel gauge; take the charge from the
+ * same gauge. CHARGE_NOW is the nominal available capacity, which can be
+ * above the full charge capacity: limit it to CHARGE_FULL. The QG battery
+ * profile does not describe this battery, so the QG is only used when there
+ * is no external gauge.
+ */
+static int smb5_get_charge_counter(struct smb_charger *chg,
+				union power_supply_propval *val)
+{
+	union power_supply_propval full = {0, };
+	int rc;
+
+	if (!chg->exfg_psy)
+		return smblib_get_prop_from_bms(chg,
+				POWER_SUPPLY_PROP_CHARGE_COUNTER, val);
+
+	rc = smblib_get_prop_from_exfg(chg, POWER_SUPPLY_PROP_CHARGE_NOW, val);
+	if (rc < 0)
+		return rc;
+
+	rc = smblib_get_prop_from_exfg(chg, POWER_SUPPLY_PROP_CHARGE_FULL,
+				&full);
+	if (!rc && full.intval > 0 && val->intval > full.intval)
+		val->intval = full.intval;
+
+	return 0;
+}
+
 static int smb5_batt_get_prop(struct power_supply *psy,
 		enum power_supply_property psp,
 		union power_supply_propval *val)
@@ -1859,8 +1889,7 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		val->intval = 0;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_COUNTER:
-		rc = smblib_get_prop_from_bms(chg,
-				POWER_SUPPLY_PROP_CHARGE_COUNTER, val);
+		rc = smb5_get_charge_counter(chg, val);
 		break;
 	case POWER_SUPPLY_PROP_CYCLE_COUNT:
 		rc = smblib_get_prop_from_exfg(chg,
