@@ -408,7 +408,7 @@ int
 kgsl_mmu_map(struct kgsl_pagetable *pagetable,
 				struct kgsl_memdesc *memdesc)
 {
-	int size;
+	uint64_t size;
 	struct kgsl_device *device = KGSL_MMU_DEVICE(pagetable->mmu);
 
 	if (!memdesc->gpuaddr)
