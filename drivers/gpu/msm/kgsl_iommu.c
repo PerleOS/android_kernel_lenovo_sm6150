@@ -217,7 +217,8 @@ static void kgsl_iommu_remove_global(struct kgsl_mmu *mmu,
 				kgsl_memdesc_footprint(memdesc) >> PAGE_SHIFT);
 
 			memdesc->gpuaddr = 0;
-			memdesc->priv &= ~KGSL_MEMDESC_GLOBAL;
+			memdesc->priv &= ~(KGSL_MEMDESC_GLOBAL |
+					KGSL_MEMDESC_MAPPED);
 			global_pt_entries[i].memdesc = NULL;
 			return;
 		}
