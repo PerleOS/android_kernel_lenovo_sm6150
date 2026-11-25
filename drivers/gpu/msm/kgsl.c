@@ -351,15 +351,18 @@ static void kgsl_destroy_ion(struct kgsl_memdesc *memdesc)
 				struct kgsl_mem_entry, memdesc);
 	struct kgsl_dma_buf_meta *meta = entry->priv_data;
 
-	if (memdesc->priv & KGSL_MEMDESC_MAPPED)
-		return;
-
 	if (meta != NULL) {
+		/* The list points to the entry, which is about to be freed */
 		remove_dmabuf_list(meta);
-		dma_buf_unmap_attachment(meta->attach, meta->table,
-			DMA_BIDIRECTIONAL);
-		dma_buf_detach(meta->dmabuf, meta->attach);
-		dma_buf_put(meta->dmabuf);
+
+		/* Keep the buffer if the GPU can still access it */
+		if (!(memdesc->priv & KGSL_MEMDESC_MAPPED)) {
+			dma_buf_unmap_attachment(meta->attach, meta->table,
+				DMA_BIDIRECTIONAL);
+			dma_buf_detach(meta->dmabuf, meta->attach);
+			dma_buf_put(meta->dmabuf);
+		}
+
 		kfree(meta);
 	}
 
