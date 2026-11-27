@@ -236,7 +236,19 @@ SECTIONS
 	__pecoff_data_rawsize = ABSOLUTE(. - __initdata_begin);
 	_edata = .;
 
-	BSS_SECTION(0, 0, 0)
+	/*
+	 * Expanded BSS_SECTION(0, 0, 0) with the RTIC area first: it has to be
+	 * placed by the first matching rule, inside __bss_start..__bss_stop, so
+	 * that it is zeroed and lies before _end with any linker. A separate
+	 * .bss statement after _end puts it outside the image with LLD.
+	 */
+	VMLINUX_SYMBOL(__bss_start) = .;
+	.bss.rtic : {
+		RTIC_BSS
+	}
+	SBSS(0)
+	BSS(0)
+	VMLINUX_SYMBOL(__bss_stop) = .;
 
 	. = ALIGN(PAGE_SIZE);
 	idmap_pg_dir = .;
@@ -261,9 +273,6 @@ SECTIONS
 
 	HEAD_SYMBOLS
 
-	.bss : {			/* bss segment		*/
-         RTIC_BSS
-	}
 }
 
 /*
