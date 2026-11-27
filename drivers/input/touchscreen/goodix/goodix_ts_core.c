@@ -1944,9 +1944,9 @@ static int goodix_generic_noti_callback(struct notifier_block *self,
 	const struct goodix_ts_hw_ops *hw_ops = ts_hw_ops(ts_core);
 	int r;
 	int i =0;
-	char tempchar[1];
+	char tempchar[3];
 	memset(hardinfo,0,64);
-	memset(tempchar,0,1);
+	memset(tempchar,0,sizeof(tempchar));
 
 	ts_info("notify event type 0x%x", (unsigned int)action);
 	switch (action) {
@@ -1958,8 +1958,8 @@ static int goodix_generic_noti_callback(struct notifier_block *self,
 		else{
 			ts_info("mela ic vid:%*ph\n",4,ts_dev->chip_version.vid);
 			for(i=0;i<4;i++){
-				sprintf(tempchar,"%02x",ts_dev->chip_version.vid[i]);
-				ts_info("tempchar %s",&tempchar);
+				snprintf(tempchar,sizeof(tempchar),"%02x",ts_dev->chip_version.vid[i]);
+				ts_info("tempchar %s",tempchar);
 				strcat(hardinfo,tempchar);
 			}
 				strcat(hardinfo,":hehui");
