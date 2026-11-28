@@ -6,6 +6,27 @@ config KERNELVERSION
 	string
 	option env="KERNELVERSION"
 
+config CC_NAME
+	string
+	option env="KCONFIG_CC_NAME"
+
+config AS_NAME
+	string
+	option env="KCONFIG_AS_NAME"
+
+config LD_NAME
+	string
+	option env="KCONFIG_LD_NAME"
+
+config CC_IS_CLANG
+	def_bool CC_NAME = "clang"
+
+config AS_IS_LLVM
+	def_bool AS_NAME = "llvm"
+
+config LD_IS_LLD
+	def_bool LD_NAME = "lld"
+
 config DEFCONFIG_LIST
 	string
 	depends on !UML

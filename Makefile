@@ -569,6 +569,12 @@ endif
 KBUILD_CPPFLAGS += -Qunused-arguments
 endif
 
+# Toolchain names for init/Kconfig (CC_IS_CLANG, AS_IS_LLVM, LD_IS_LLD): the Kconfig of
+# this kernel cannot run the tools itself
+export KCONFIG_CC_NAME := $(cc-name)
+export KCONFIG_AS_NAME := $(if $(filter clang,$(cc-name)),$(if $(filter -no-integrated-as,$(CLANG_FLAGS)),gnu,llvm),gnu)
+export KCONFIG_LD_NAME := $(ld-name)
+
 RETPOLINE_CFLAGS_GCC := -mindirect-branch=thunk-extern -mindirect-branch-register
 RETPOLINE_VDSO_CFLAGS_GCC := -mindirect-branch=thunk-inline -mindirect-branch-register
 RETPOLINE_CFLAGS_CLANG := -mretpoline-external-thunk
